@@ -70,7 +70,7 @@ func NewJsonServer(config ServerConfig, handlers []RequestHandler) *JsonServer {
 	}
 }
 
-func (js *JsonServer) start() {
+func (js *JsonServer) Start() {
 	for _, requestHandler := range js.handlers {
 		http.HandleFunc(requestHandler.path, func(res http.ResponseWriter, req *http.Request) {
 			file, err := ioutil.ReadFile(requestHandler.jsonPath)
