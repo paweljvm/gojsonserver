@@ -73,7 +73,7 @@ func NewJsonServer(config ServerConfig, handlers []RequestHandler) *JsonServer {
 
 func (js *JsonServer) Start() {
 	for _, requestHandler := range js.handlers {
-		log.Printf("Registering handler %s %s ", strings.Join(requestHandler.methods, ", "), requestHandler.jsonPath)
+		log.Printf("Registering handler %s %s ", strings.Join(requestHandler.methods, ", "), requestHandler.path)
 		http.HandleFunc(requestHandler.path, func(res http.ResponseWriter, req *http.Request) {
 			if !contains(requestHandler.methods, req.Method) {
 				http.NotFound(res, req)
@@ -84,7 +84,8 @@ func (js *JsonServer) Start() {
 				} else {
 					time.Sleep(time.Duration(requestHandler.delay) * time.Millisecond)
 					res.WriteHeader(requestHandler.statusCode)
-					res.Header().Add("Content-Type", "application/json")
+					res.Header().Set("Content-Type", "application/json")
+					res.Header().Set("Server", "GoJsonServer")
 					res.Write(file)
 				}
 			}
