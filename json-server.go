@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -72,18 +73,33 @@ func NewJsonServer(config ServerConfig, handlers []RequestHandler) *JsonServer {
 
 func (js *JsonServer) Start() {
 	for _, requestHandler := range js.handlers {
+		log.Printf("Registering handler %s %s ", strings.Join(requestHandler.methods, ", "), requestHandler.jsonPath)
 		http.HandleFunc(requestHandler.path, func(res http.ResponseWriter, req *http.Request) {
-			file, err := ioutil.ReadFile(requestHandler.jsonPath)
-			if err != nil {
-				log.Println(err)
+			if !contains(requestHandler.methods, req.Method) {
+				http.NotFound(res, req)
 			} else {
-				time.Sleep(time.Duration(requestHandler.delay) * time.Millisecond)
-				res.WriteHeader(requestHandler.statusCode)
-				res.Write(file)
+				file, err := ioutil.ReadFile(requestHandler.jsonPath)
+				if err != nil {
+					log.Println(err)
+				} else {
+					time.Sleep(time.Duration(requestHandler.delay) * time.Millisecond)
+					res.WriteHeader(requestHandler.statusCode)
+					res.Header().Add("Content-Type", "application/json")
+					res.Write(file)
+				}
 			}
 		})
 	}
 	hostPort := js.config.host + ":" + fmt.Sprintf("%d", js.config.port)
 	fmt.Printf("Running json server on %s \n", hostPort)
 	http.ListenAndServe(hostPort, nil)
+}
+
+func contains(methods []string, method string) bool {
+	for _, m := range methods {
+		if m == method {
+			return true
+		}
+	}
+	return false
 }
