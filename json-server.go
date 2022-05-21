@@ -83,9 +83,9 @@ func (js *JsonServer) Start() {
 					log.Println(err)
 				} else {
 					time.Sleep(time.Duration(requestHandler.delay) * time.Millisecond)
-					res.WriteHeader(requestHandler.statusCode)
 					res.Header().Set("Content-Type", "application/json")
 					res.Header().Set("Server", "GoJsonServer")
+					res.WriteHeader(requestHandler.statusCode)
 					res.Write(file)
 				}
 			}
