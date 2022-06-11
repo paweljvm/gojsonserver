@@ -10,7 +10,14 @@ import (
 
 func main() {
 	js := NewLocalJsonServer(4444, []RequestHandler{
-		GET("/api", "api.json", 200, 300),
+		Get("/api", "api.json", 200, 300),
+		GetProvider("/custom-logic", func(req *http.Request) {
+			 if req.ContentLength > 0  {
+				return "json-not-empty.json"
+			 } else {
+				return "json-empty.json"
+			 }
+		})
 	})
 	js.Start()
 }

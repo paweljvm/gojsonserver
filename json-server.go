@@ -17,48 +17,48 @@ type RequestHandler struct {
 	delay      int
 }
 
-func GET(path string, jsonPath string, statusCode int, delay int) *RequestHandler {
+func Get(path string, jsonPath string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("GET", path, func(*http.Request) string { return jsonPath }, statusCode, delay)
 }
 
-func POST(path string, jsonPath string, statusCode int, delay int) *RequestHandler {
+func Post(path string, jsonPath string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("POST", path, func(*http.Request) string { return jsonPath }, statusCode, delay)
 }
 
-func PUT(path string, jsonPath string, statusCode int, delay int) *RequestHandler {
+func Put(path string, jsonPath string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("PUT", path, func(*http.Request) string { return jsonPath }, statusCode, delay)
 }
 
-func PATCH(path string, jsonPath string, statusCode int, delay int) *RequestHandler {
+func Patch(path string, jsonPath string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("PATCH", path, func(*http.Request) string { return jsonPath }, statusCode, delay)
 }
 
-func DELETE(path string, jsonPath string, statusCode int, delay int) *RequestHandler {
+func Delete(path string, jsonPath string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("DELETE", path, func(*http.Request) string { return jsonPath }, statusCode, delay)
 }
 
-func GetProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) *RequestHandler {
+func GetProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("GET", path, jsonPathProvider, statusCode, delay)
 }
 
-func PostProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) *RequestHandler {
+func PostProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("POST", path, jsonPathProvider, statusCode, delay)
 }
 
-func PutProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) *RequestHandler {
+func PutProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("PUT", path, jsonPathProvider, statusCode, delay)
 }
 
-func PatchProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) *RequestHandler {
+func PatchProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("PATCH", path, jsonPathProvider, statusCode, delay)
 }
 
-func DeleteProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) *RequestHandler {
+func DeleteProvider(path string, jsonPathProvider func(*http.Request) string, statusCode int, delay int) RequestHandler {
 	return NewRequestHandler("DELETE", path, jsonPathProvider, statusCode, delay)
 }
 
-func NewRequestHandler(method string, path string, jsonProvider func(*http.Request) string, statusCode int, delay int) *RequestHandler {
-	return &RequestHandler{
+func NewRequestHandler(method string, path string, jsonProvider func(*http.Request) string, statusCode int, delay int) RequestHandler {
+	return RequestHandler{
 		path, []string{method}, jsonProvider, statusCode, delay,
 	}
 }
