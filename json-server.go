@@ -90,22 +90,25 @@ func NewJsonServer(config ServerConfig, handlers []RequestHandler) *JsonServer {
 func (js *JsonServer) Start() {
 	for _, requestHandler := range js.handlers {
 		log.Printf("Registering handler %s %s ", strings.Join(requestHandler.methods, ", "), requestHandler.path)
-		http.HandleFunc(requestHandler.path, func(res http.ResponseWriter, req *http.Request) {
-			if !contains(requestHandler.methods, req.Method) {
-				http.NotFound(res, req)
-			} else {
-				file, err := ioutil.ReadFile(requestHandler.jsonPath(req))
-				if err != nil {
-					log.Println(err)
+		func(requestHandler RequestHandler) {
+			http.HandleFunc(requestHandler.path, func(res http.ResponseWriter, req *http.Request) {
+				if !contains(requestHandler.methods, req.Method) {
+					http.NotFound(res, req)
 				} else {
-					time.Sleep(time.Duration(requestHandler.delay) * time.Millisecond)
-					res.Header().Set("Content-Type", "application/json")
-					res.Header().Set("Server", "GoJsonServer")
-					res.WriteHeader(requestHandler.statusCode)
-					res.Write(file)
+					file, err := ioutil.ReadFile(requestHandler.jsonPath(req))
+					if err != nil {
+						log.Println(err)
+					} else {
+						time.Sleep(time.Duration(requestHandler.delay) * time.Millisecond)
+						res.Header().Set("Content-Type", "application/json")
+						res.Header().Set("Server", "GoJsonServer")
+						res.WriteHeader(requestHandler.statusCode)
+						res.Write(file)
+					}
 				}
-			}
-		})
+			})
+		}(requestHandler)
+
 	}
 	hostPort := js.config.host + ":" + fmt.Sprintf("%d", js.config.port)
 	fmt.Printf("Running json server on %s \n", hostPort)
