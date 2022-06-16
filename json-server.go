@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	. "github.com/gorilla/websocket"
 )
 
 type RequestHandler struct {
@@ -15,6 +17,11 @@ type RequestHandler struct {
 	jsonPath   func(*http.Request) string
 	statusCode int
 	delay      int
+}
+
+type WebSocketHandler struct {
+	path    string
+	handler func(*Conn)
 }
 
 func Get(path string, jsonPath string, statusCode int, delay int) RequestHandler {
@@ -63,27 +70,34 @@ func NewRequestHandler(method string, path string, jsonProvider func(*http.Reque
 	}
 }
 
+func WebSocketProvider(path string, handler func(con *Conn)) WebSocketHandler {
+	return WebSocketHandler{path, handler}
+}
+
 type ServerConfig struct {
-	host string
-	port int
+	Host string
+	Port int
 }
 
 type JsonServer struct {
-	config   ServerConfig
-	handlers []RequestHandler
+	config            ServerConfig
+	handlers          []RequestHandler
+	webSocketHandlers []WebSocketHandler
 }
 
 func NewLocalJsonServer(port int, handlers []RequestHandler) *JsonServer {
 	return NewJsonServer(
 		ServerConfig{"localhost", port},
 		handlers,
+		nil,
 	)
 }
 
-func NewJsonServer(config ServerConfig, handlers []RequestHandler) *JsonServer {
+func NewJsonServer(config ServerConfig, handlers []RequestHandler, webSocketHandlers []WebSocketHandler) *JsonServer {
 	return &JsonServer{
 		config,
 		handlers,
+		webSocketHandlers,
 	}
 }
 
@@ -109,8 +123,28 @@ func (js *JsonServer) Start() {
 			})
 		}(requestHandler)
 
+		if js.webSocketHandlers != nil {
+			for _, webSocketHandler := range js.webSocketHandlers {
+				func(webSocketHandler WebSocketHandler) {
+					http.HandleFunc(webSocketHandler.path, func(res http.ResponseWriter, req *http.Request) {
+						var upgrader = Upgrader{}
+						// allow any origin
+						// should not be used in production code
+						upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+						conn, err := upgrader.Upgrade(res, req, nil)
+						if err != nil {
+							log.Print("upgrade failed: ", err)
+							return
+						}
+						defer conn.Close()
+						webSocketHandler.handler(conn)
+					})
+
+				}(webSocketHandler)
+			}
+		}
 	}
-	hostPort := js.config.host + ":" + fmt.Sprintf("%d", js.config.port)
+	hostPort := js.config.Host + ":" + fmt.Sprintf("%d", js.config.Port)
 	fmt.Printf("Running json server on %s \n", hostPort)
 	http.ListenAndServe(hostPort, nil)
 }
