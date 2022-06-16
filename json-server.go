@@ -102,6 +102,38 @@ func NewJsonServer(config ServerConfig, handlers []RequestHandler, webSocketHand
 }
 
 func (js *JsonServer) Start() {
+	registerRestHandlers(js)
+	registerWebSocketHandlers(js)
+	hostPort := js.config.Host + ":" + fmt.Sprintf("%d", js.config.Port)
+	fmt.Printf("Running json server on %s \n", hostPort)
+	http.ListenAndServe(hostPort, nil)
+}
+
+func registerWebSocketHandlers(js *JsonServer) {
+	if js.webSocketHandlers != nil {
+		for _, webSocketHandler := range js.webSocketHandlers {
+			func(webSocketHandler WebSocketHandler) {
+				log.Printf("Registering WS handler %s", webSocketHandler.path)
+				http.HandleFunc(webSocketHandler.path, func(res http.ResponseWriter, req *http.Request) {
+					var upgrader = Upgrader{}
+					// allow any origin
+					// should not be used in production code
+					upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+					conn, err := upgrader.Upgrade(res, req, nil)
+					if err != nil {
+						log.Print("upgrade failed: ", err)
+						return
+					}
+					defer conn.Close()
+					webSocketHandler.handler(conn)
+				})
+
+			}(webSocketHandler)
+		}
+	}
+}
+
+func registerRestHandlers(js *JsonServer) {
 	for _, requestHandler := range js.handlers {
 		log.Printf("Registering handler %s %s ", strings.Join(requestHandler.methods, ", "), requestHandler.path)
 		func(requestHandler RequestHandler) {
@@ -122,31 +154,7 @@ func (js *JsonServer) Start() {
 				}
 			})
 		}(requestHandler)
-
-		if js.webSocketHandlers != nil {
-			for _, webSocketHandler := range js.webSocketHandlers {
-				func(webSocketHandler WebSocketHandler) {
-					http.HandleFunc(webSocketHandler.path, func(res http.ResponseWriter, req *http.Request) {
-						var upgrader = Upgrader{}
-						// allow any origin
-						// should not be used in production code
-						upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-						conn, err := upgrader.Upgrade(res, req, nil)
-						if err != nil {
-							log.Print("upgrade failed: ", err)
-							return
-						}
-						defer conn.Close()
-						webSocketHandler.handler(conn)
-					})
-
-				}(webSocketHandler)
-			}
-		}
 	}
-	hostPort := js.config.Host + ":" + fmt.Sprintf("%d", js.config.Port)
-	fmt.Printf("Running json server on %s \n", hostPort)
-	http.ListenAndServe(hostPort, nil)
 }
 
 func contains(methods []string, method string) bool {
